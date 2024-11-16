@@ -1,0 +1,17 @@
+.controller_button{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    width: 40px;
+    font-size: 1.2em;
+    font-weight: bold;
+    aspect-ratio: 1/1;
+    border-radius: 50%;
+    color: black;
+    border: 4px solid black;
+    user-select: none;
+
+    align-self: center;
+    justify-self: center;
+}
