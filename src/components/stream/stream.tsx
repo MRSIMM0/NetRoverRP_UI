@@ -8,15 +8,19 @@ export default function Stream() {
 
     const [isCameraConnected, setCameraConnected] = useState(false)
 
-    socket?.on('frame', (data) => {
-        setCameraConnected(true)
-        if(ref.current == null) return;
-        var arrayBufferView = new Uint8Array( data );
-        var blob = new Blob( [ arrayBufferView ], { type: "image/jpeg" } );
-        var urlCreator = window.URL || window.webkitURL;
-        var imageUrl = urlCreator.createObjectURL( blob );
-        ref.current.src = imageUrl;
-    })
+socket?.on('frame', (data) => {
+    setCameraConnected(true);
+    if (!ref.current) return;
+
+    const blob = new Blob([new Uint8Array(data)], { type: "image/jpeg" });
+
+    const url = URL.createObjectURL(blob);
+
+    ref.current.src = url;
+
+    url && setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
 
     useEffect(() => {
       setCameraConnected(false)

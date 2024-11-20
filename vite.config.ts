@@ -7,12 +7,12 @@ export default defineConfig({
 	server: {
 		proxy: {
 		  '/api': {
-			target: 'http://192.168.1.240:5000',
+			target: 'http://192.168.1.26:5000',
 			changeOrigin: true,
 			rewrite: (path) => path.replace(/^\/api/, ''),
 		  },
 		  '/socket.io': {
-			target: 'http://192.168.1.240:5000',
+			target: 'http://192.168.1.26:5000',
 			ws: true, // Enable websocket proxying for Socket.IO
 		  },
 		},
