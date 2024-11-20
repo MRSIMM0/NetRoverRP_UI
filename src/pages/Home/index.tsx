@@ -5,6 +5,7 @@ import Gamepad from '../../components/gamepad/gamepad';
 import styles from './home.module.scss';
 import Status from '../../components/status/status';
 import Stream from '../../components/stream/stream';
+import Preview from '../../components/preview/preview';
 
 export function Home() {
 
@@ -18,6 +19,9 @@ export function Home() {
             </div>
             <div className={styles.stream}>
                 <Stream />
+            </div>
+            <div className={styles.preview}>
+                <Preview />
             </div>
         </div>
     );

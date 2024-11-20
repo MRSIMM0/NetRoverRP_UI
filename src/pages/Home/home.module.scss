@@ -18,3 +18,14 @@
     bottom: 0;
     right: 0;
 }
+
+.preview {
+    position: absolute;
+    right: 15px;
+    bottom: 15px;
+    z-index: 1;
+    canvas {
+        background-color: white;
+        border-radius: 10px;
+    }
+}
