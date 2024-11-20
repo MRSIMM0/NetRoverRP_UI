@@ -49,7 +49,7 @@ const ControllerProvider = () => {
 
                 if (!_.isEqual(newGamepad, lastGamepad)) {
 
-                    socket.emit('gamepad', JSON.stringify(newGamepad))
+                    socket?.emit('gamepad', JSON.stringify(newGamepad))
 
                     setGamepad(newGamepad);
                     lastGamepad = newGamepad;

@@ -11,10 +11,7 @@ export function App() {
 
 		<LocationProvider>
 			<main>
-				<Router>
-					<Route path="/" component={Home} />
-					<Route default component={NotFound} />
-				</Router>
+				<Home />
 			</main>
 			<ControllerProvider />
 			<SocketProvider />
