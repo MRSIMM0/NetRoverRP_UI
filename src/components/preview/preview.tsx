@@ -1,60 +1,97 @@
-import React, { useEffect, useRef, useState } from 'react';
-import useGamepadStore from '../../store/gamepad/gamepad.store';
+import { useRef, useEffect } from "react";
+import useAccelerationStore from "../../store/acceleration/acceleration.store";
 
 export default function Preview() {
-  const { gamepad } = useGamepadStore();
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const { acceleration } = useAccelerationStore();
 
-  const canvasRef = useRef(null);
+  // Position
+  const positionRef = useRef({ x: 200, y: 200 });
 
-  const [carState, setCarState] = useState({
-    x: 200,
-    y: 200,
-    angle: 0,
-  });
+  // Forward velocity (scalar), turning velocity (scalar), heading (radians)
+  const forwardVelRef = useRef(0);
+  const turnVelRef = useRef(0);
+  const headingRef = useRef(0);
 
-  const steering = gamepad?.LEFT_STICK?.axis[0] || 0;
-  const throttle = gamepad?.RIGHT_TRIGGER?.value || 0;
-  const back = gamepad?.LEFT_TRIGGER?.value || 0;
+  // For delta time
+  const lastTimeRef = useRef(performance.now());
 
   useEffect(() => {
-    if (!canvasRef.current) return;
-
     const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    // Draw the initial state
-    ctx.fillStyle = 'black';
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = 2;
+    let animationId: number;
 
-    const updateCarPosition = () => {
-      // Update car state
-      setCarState((prevState) => {
-        const newAngle = prevState.angle + steering * 0.05; // Steering adjusts the angle
-        const forwardX = Math.cos(newAngle) * throttle * 5;
-        const forwardY = Math.sin(newAngle) * throttle * 5;
-        const backwardX = Math.cos(newAngle) * back * -5;
-        const backwardY = Math.sin(newAngle) * back * -5;
-        const newX = prevState.x + forwardX + backwardX;
-        const newY = prevState.y + forwardY + backwardY;
+    function animate(time: number) {
+      const dt = (time - lastTimeRef.current) / 1000; // seconds
+      lastTimeRef.current = time;
 
-        // Draw a line from the previous position to the new position
-        ctx.beginPath();
-        ctx.moveTo(prevState.x, prevState.y);
-        ctx.lineTo(newX, newY);
-        ctx.stroke();
+      // ---------------------------------------------------
+      // 1) Update velocities from acceleration
+      // ---------------------------------------------------
+      // X-axis => forward/back acceleration
+      // Multiply by some factor to make the effect more visible
+      forwardVelRef.current += acceleration.x * dt * 10;
 
-        return {
-          x: newX,
-          y: newY,
-          angle: newAngle,
-        };
-      });
+      // Y-axis => turning acceleration
+      // Multiply by factor for how quickly the car turns
+      turnVelRef.current += acceleration.y * dt * 50;
+
+      // ---------------------------------------------------
+      // 2) Apply friction so the car doesn't drift/spin forever
+      // ---------------------------------------------------
+      const friction = 0.9;
+      forwardVelRef.current *= friction;
+      turnVelRef.current *= friction;
+
+      // ---------------------------------------------------
+      // 3) Update heading from turning velocity
+      // ---------------------------------------------------
+      headingRef.current += turnVelRef.current * dt;
+
+      // ---------------------------------------------------
+      positionRef.current.x += forwardVelRef.current * Math.cos(headingRef.current) * dt * 100;
+      positionRef.current.y += forwardVelRef.current * Math.sin(headingRef.current) * dt * 100;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Move origin to car's position
+      ctx.save();
+      ctx.translate(positionRef.current.x, positionRef.current.y);
+
+      // Rotate around the center of the car
+      ctx.rotate(headingRef.current);
+
+      ctx.fillStyle = "#007BFF";
+      ctx.fillRect(-30, -15, 60, 30);
+
+      ctx.fillStyle = "black";
+      // front wheels
+      ctx.fillRect(-25, -20, 10, 5);
+      ctx.fillRect(15, -20, 10, 5);
+      ctx.fillRect(-25, 15, 10, 5);
+      ctx.fillRect(15, 15, 10, 5);
+
+      ctx.restore();
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    animationId = requestAnimationFrame(animate);
+
+    return () => {
+      cancelAnimationFrame(animationId);
     };
+  }, [acceleration]);
 
-    const interval = setInterval(updateCarPosition, 16); // Update at ~60fps
-    return () => clearInterval(interval);
-  }, [steering, throttle, back]);
-
-  return <canvas ref={canvasRef} height={400} width={400} />;
+  return (
+      <canvas
+          ref={canvasRef}
+          width={400}
+          height={400}
+          style={{ border: "1px solid #000" }}
+      />
+  );
 }

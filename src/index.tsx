@@ -5,6 +5,7 @@ import { NotFound } from './pages/_404.jsx';
 import './style.css';
 import ControllerProvider from './providers/ControllerProvider.js';
 import SocketProvider from './providers/SocketProvider.js';
+import AccelerationProvider from "./providers/AccelerationProvider";
 
 export function App() {
 	return (
@@ -15,6 +16,7 @@ export function App() {
 			</main>
 			<ControllerProvider />
 			<SocketProvider />
+			<AccelerationProvider />
 		</LocationProvider>
 
 	);
