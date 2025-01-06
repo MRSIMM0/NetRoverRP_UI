@@ -5,15 +5,20 @@ export default function Preview() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { acceleration } = useAccelerationStore();
 
-  // Position
+  // Position of the car
   const positionRef = useRef({ x: 200, y: 200 });
 
-  // Forward velocity (scalar), turning velocity (scalar), heading (radians)
+  // Keep an array of all positions (the "path") to draw the trail
+  const pathRef = useRef<Array<{ x: number, y: number }>>([
+    { x: 200, y: 200 } // initial position
+  ]);
+
+  // Forward velocity, turning velocity, heading (in radians)
   const forwardVelRef = useRef(0);
   const turnVelRef = useRef(0);
   const headingRef = useRef(0);
 
-  // For delta time
+  // For delta time calculation
   const lastTimeRef = useRef(performance.now());
 
   useEffect(() => {
@@ -25,43 +30,64 @@ export default function Preview() {
     let animationId: number;
 
     function animate(time: number) {
-      const dt = (time - lastTimeRef.current) / 1000; // seconds
+      const dt = (time - lastTimeRef.current) / 1000; // convert ms to s
       lastTimeRef.current = time;
 
       // ---------------------------------------------------
-      // 1) Update velocities from acceleration
+      // 1) Update velocities based on acceleration
       // ---------------------------------------------------
-      // X-axis => forward/back acceleration
-      // Multiply by some factor to make the effect more visible
+      // forward/back acceleration
       forwardVelRef.current += acceleration.x * dt * 10;
-
-      // Y-axis => turning acceleration
-      // Multiply by factor for how quickly the car turns
+      // turning acceleration
       turnVelRef.current += acceleration.y * dt * 50;
 
       // ---------------------------------------------------
-      // 2) Apply friction so the car doesn't drift/spin forever
+      // 2) Apply friction so it doesn't spin/roll forever
       // ---------------------------------------------------
       const friction = 0.9;
       forwardVelRef.current *= friction;
       turnVelRef.current *= friction;
 
       // ---------------------------------------------------
-      // 3) Update heading from turning velocity
+      // 3) Update heading
       // ---------------------------------------------------
       headingRef.current += turnVelRef.current * dt;
 
       // ---------------------------------------------------
-      positionRef.current.x += forwardVelRef.current * Math.cos(headingRef.current) * dt * 100;
-      positionRef.current.y += forwardVelRef.current * Math.sin(headingRef.current) * dt * 100;
+      // 4) Update position
+      // ---------------------------------------------------
+      positionRef.current.x +=
+          forwardVelRef.current * Math.cos(headingRef.current) * dt * 100;
+      positionRef.current.y +=
+          forwardVelRef.current * Math.sin(headingRef.current) * dt * 100;
 
+      // Keep track of each position in the path array
+      pathRef.current.push({
+        x: positionRef.current.x,
+        y: positionRef.current.y
+      });
+
+      // ---------------------------------------------------
+      // 5) Rendering
+      // ---------------------------------------------------
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Move origin to car's position
+      // Draw the path (a continuous line from each stored point to the next)
+      ctx.beginPath();
+      pathRef.current.forEach((pos, i) => {
+        if (i === 0) {
+          ctx.moveTo(pos.x, pos.y);
+        } else {
+          ctx.lineTo(pos.x, pos.y);
+        }
+      });
+      ctx.strokeStyle = "red";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Draw the car
       ctx.save();
       ctx.translate(positionRef.current.x, positionRef.current.y);
-
-      // Rotate around the center of the car
       ctx.rotate(headingRef.current);
 
       ctx.fillStyle = "#007BFF";
@@ -71,6 +97,7 @@ export default function Preview() {
       // front wheels
       ctx.fillRect(-25, -20, 10, 5);
       ctx.fillRect(15, -20, 10, 5);
+      // rear wheels
       ctx.fillRect(-25, 15, 10, 5);
       ctx.fillRect(15, 15, 10, 5);
 
